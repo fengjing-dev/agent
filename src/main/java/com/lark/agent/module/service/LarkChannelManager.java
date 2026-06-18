@@ -1,6 +1,7 @@
 package com.lark.agent.module.service;
 
 import com.lark.agent.module.properties.AgentProperties;
+import com.lark.agent.module.utils.JsonUtils;
 import com.lark.oapi.channel.ChannelEventHandler;
 import com.lark.oapi.channel.LarkChannel;
 import com.lark.oapi.channel.LarkChannelFactory;
@@ -101,7 +102,13 @@ public class LarkChannelManager {
         channel.on("error", new ChannelEventHandler<ChannelErrorEvent>() {
             @Override
             public void handle(ChannelErrorEvent event) {
-                log.error("Lark channel error: {}", event);
+                log.error(
+                        "Lark channel error. eventName={}, event={}, error={}",
+                        event.getEventName(),
+                        safeToJson(event.getEvent()),
+                        event.getError() == null ? null : event.getError().getMessage(),
+                        event.getError()
+                );
             }
         });
         channel.on("reconnecting", new ChannelEventHandler<Object>() {
@@ -116,5 +123,22 @@ public class LarkChannelManager {
                 log.info("Lark websocket reconnected.");
             }
         });
+    }
+
+    /**
+     * 错误事件中的原始对象可能没有可读的 toString，这里优先转成 JSON 便于排查。
+     *
+     * @param event 原始事件对象
+     * @return 可读字符串
+     */
+    private String safeToJson(Object event) {
+        if (event == null) {
+            return null;
+        }
+        try {
+            return JsonUtils.toJsonString(event);
+        } catch (RuntimeException ignored) {
+            return String.valueOf(event);
+        }
     }
 }
