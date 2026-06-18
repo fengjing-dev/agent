@@ -40,4 +40,19 @@ class AgentProperties {
      * 允许的组
      */
     var groupAllowList: MutableList<String>? = arrayListOf()
+
+    /**
+     * 群聊引用链向上追溯的最大层数
+     */
+    var groupReplyChainDepth: Int = 5
+
+    /**
+     * 私聊自动带入的历史消息条数
+     */
+    var privateChatContextSize: Int = 5
+
+    /**
+     * 私聊历史中是否包含机器人自己发送的消息
+     */
+    var includeBotHistory: Boolean = false
 }

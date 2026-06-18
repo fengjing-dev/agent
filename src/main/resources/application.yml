@@ -11,22 +11,25 @@ logging:
 
 lark:
   agent:
-    app-id: xxx
-    app-secret: xxx
-    domain: "https://open.larksuite.com"
-    require-mention: true
-    respond-to-mention-all: false
+    app-id: ${LARK_AGENT_APP_ID:}
+    app-secret: ${LARK_AGENT_APP_SECRET:}
+    domain: ${LARK_AGENT_DOMAIN:https://open.larksuite.com}
+    require-mention: ${LARK_AGENT_REQUIRE_MENTION:true}
+    respond-to-mention-all: ${LARK_AGENT_RESPOND_TO_MENTION_ALL:false}
+    group-reply-chain-depth: ${LARK_AGENT_GROUP_REPLY_CHAIN_DEPTH:5}
+    private-chat-context-size: ${LARK_AGENT_PRIVATE_CHAT_CONTEXT_SIZE:5}
+    include-bot-history: ${LARK_AGENT_INCLUDE_BOT_HISTORY:false}
     group-allow-list:
+
 server:
   port: 8080
 
-
 gemini:
-  api-key: xxxx
-  model: gemini-2.5-flash-lite
-  base-url: https://generativelanguage.googleapis.com
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-2.5-flash-lite}
+  base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
   system-prompt: |
-    你是 Lark 群聊里的智能助手。
-    请始终使用简体中文回答。
-    回答简洁、直接、清晰。
+    你是 Lark 群聊中的通用智能助手。
+    请始终使用简体中文回复。
+    回答保持简洁、直接、清晰。
     如果信息不足，请明确说明，不要编造。
