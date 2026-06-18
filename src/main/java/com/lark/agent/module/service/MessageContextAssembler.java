@@ -221,9 +221,13 @@ public class MessageContextAssembler {
         if (Strings.isEmpty(rawContent)) {
             return "";
         }
+        String normalizedContent = rawContent.trim();
+        if (!looksLikeJson(normalizedContent)) {
+            return normalizedContent;
+        }
         try {
             // 文本消息内容通常是 JSON 包裹的 {"text":"..."}，这里尽量只提纯可读文本。
-            JsonNode jsonNode = JsonUtils.parseTree(rawContent);
+            JsonNode jsonNode = JsonUtils.parseTree(normalizedContent);
             JsonNode textNode = jsonNode.path("text");
             if (!textNode.isMissingNode() && !textNode.isNull()) {
                 return textNode.asText();
@@ -231,7 +235,24 @@ public class MessageContextAssembler {
         } catch (RuntimeException ignored) {
             // Keep the raw content when it is already normalized plain text.
         }
-        return rawContent;
+        return normalizedContent;
+    }
+
+    /**
+     * 避免把普通文本误当成 JSON 解析，从而打出无意义的错误日志。
+     *
+     * @param content 待判断内容
+     * @return true 表示值得尝试按 JSON 解析
+     */
+    private boolean looksLikeJson(String content) {
+        if (Strings.isEmpty(content)) {
+            return false;
+        }
+        char firstChar = content.charAt(0);
+        char lastChar = content.charAt(content.length() - 1);
+        return (firstChar == '{' && lastChar == '}')
+                || (firstChar == '[' && lastChar == ']')
+                || (firstChar == '"' && lastChar == '"');
     }
 
     /**
