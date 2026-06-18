@@ -131,7 +131,8 @@ public class MessageContextAssembler {
         if ("app".equalsIgnoreCase(sender.getSenderType()) || "bot".equalsIgnoreCase(sender.getSenderType())) {
             return false;
         }
-        return !currentMessage.getSenderId().equals(sender.getId());
+        // 私聊上下文需要保留用户自己之前的提问，否则会把连续追问链条全部截断。
+        return true;
     }
 
     /**
