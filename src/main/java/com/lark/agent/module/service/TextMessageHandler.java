@@ -19,9 +19,9 @@ public class TextMessageHandler implements MessageHandler {
     @Resource
     private GeminiClient geminiClient;
     @Resource
-    private LarkChannelManager larkChannelManager;
-    @Resource
     private MessageContextAssembler messageContextAssembler;
+    @Resource
+    private LarkMessageReplyService larkMessageReplyService;
 
     /**
      * 判断当前消息是否由文本消息处理器处理。
@@ -49,6 +49,6 @@ public class TextMessageHandler implements MessageHandler {
         String context = messageContextAssembler.assemble(message);
         // 路由仍只基于当前提问判断领域，避免历史上下文把 prompt 分类带偏。
         String reply = geminiClient.call(context, message.getContent());
-        larkChannelManager.replyText(message.getChatId(), message.getMessageId(), reply);
+        larkMessageReplyService.replyText(message.getChatId(), message.getMessageId(), reply);
     }
 }

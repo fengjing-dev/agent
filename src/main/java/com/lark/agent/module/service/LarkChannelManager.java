@@ -8,8 +8,6 @@ import com.lark.oapi.channel.config.LarkChannelOptions;
 import com.lark.oapi.channel.config.LarkChannelOptions.PolicyConfig;
 import com.lark.oapi.channel.model.ChannelErrorEvent;
 import com.lark.oapi.channel.model.NormalizedMessage;
-import com.lark.oapi.channel.model.SendInput;
-import com.lark.oapi.channel.model.SendOptions;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
@@ -19,7 +17,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ExecutionException;
 
 /**
- * 启动 Lark 长连接并消费消息事件的运行器。
+ * 负责管理 Lark 长连接生命周期，并把消息事件交给分发器处理。
  *
  * @Author: Fatina 2026/06/17
  */
@@ -34,27 +32,28 @@ public class LarkChannelManager {
 
     @Resource
     private ManagerEventDispatcher dispatcher;
+    @Resource
+    private LarkMessageReplyService larkMessageReplyService;
 
     /**
-     * @param properties Lark 智能体配置
+     * @param properties Lark 应用配置
      */
     public LarkChannelManager(AgentProperties properties) {
         this.properties = properties;
     }
 
     /**
-     * 启动后建立 Lark 长连接并注册事件处理器。
-     *
+     * 建立 Lark 长连接并注册事件处理器。
      */
     public void connection() {
-        // 本地验证阶段固定使用长连接模式，先确认 Lark 入站事件链路可用。
         try {
             this.channel = LarkChannelFactory.createLarkChannel(buildOptions());
+            larkMessageReplyService.setChannel(this.channel);
             registerHandlers();
             this.channel.connect().get();
             log.info("Lark websocket connected. domain={}", properties.getDomain());
         } catch (Exception e) {
-            log.error("Lark websocket connect fail. domain={}", properties.getDomain());
+            log.error("Lark websocket connect fail. domain={}", properties.getDomain(), e);
             throw new RuntimeException(e);
         }
     }
@@ -78,6 +77,9 @@ public class LarkChannelManager {
         }
     }
 
+    /**
+     * @return Lark 长连接配置
+     */
     private LarkChannelOptions buildOptions() {
         PolicyConfig policyConfig = new PolicyConfig();
         policyConfig.setRequireMention(properties.getRequireMention());
@@ -92,7 +94,7 @@ public class LarkChannelManager {
     }
 
     /**
-     * 注册
+     * 注册消息、错误和重连事件。
      */
     private void registerHandlers() {
         channel.on("message", message -> dispatcher.handleMessage((NormalizedMessage) message));
@@ -114,24 +116,5 @@ public class LarkChannelManager {
                 log.info("Lark websocket reconnected.");
             }
         });
-    }
-
-    /**
-     * 回复文本消息
-     * @param chatId 聊天ID
-     * @param messageId 消息ID
-     * @param content 文本内容
-     */
-    public void replyText(String chatId, String messageId, String content) {
-        try {
-            channel.send(
-                    chatId,
-                    SendInput.text(content),
-                    SendOptions.newBuilder().replyTo(messageId).build()
-            );
-        } catch (Exception e) {
-            log.error("Failed to reply message: chatId={}, messageId={}",
-                    chatId, messageId, e);
-        }
     }
 }
