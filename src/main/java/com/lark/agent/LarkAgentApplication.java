@@ -7,17 +7,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
- * Lark 智能体本地验证项目启动入口。
- * @Author: Fatina 2026/06/17
+ * Spring Boot entry point for the local Lark agent verification application.
  */
 @SpringBootApplication
 @EnableConfigurationProperties({AgentProperties.class, GeminiProperties.class})
 public class LarkAgentApplication {
 
     /**
-     * 启动 Spring Boot 应用。
+     * Starts the Spring Boot application.
      *
-     * @param args 启动参数
+     * @param args command-line arguments passed to Spring Boot.
      */
     public static void main(String[] args) {
         SpringApplication.run(LarkAgentApplication.class, args);

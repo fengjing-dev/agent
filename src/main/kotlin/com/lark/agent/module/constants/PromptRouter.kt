@@ -2,6 +2,9 @@ package com.lark.agent.module.constants
 
 import com.lark.agent.module.enum.DomainType
 
+/**
+ * Selects a domain-specific prompt by matching keywords in the current user question.
+ */
 object PromptRouter {
 
     private val paymentKeywords = listOf(
@@ -13,7 +16,8 @@ object PromptRouter {
     )
 
     private val techKeywords = listOf(
-        "exception", "报错", "异常", "堆栈", "sql", "java", "spring", "接口", "代码", "bug", "日志", "trace", "redis", "mq", "数据库", "前端", "后端", "kotlin", "typescript"
+        "exception", "报错", "异常", "堆栈", "sql", "java", "spring", "接口", "代码", "bug", "日志", "trace",
+        "redis", "mq", "数据库", "前端", "后端", "kotlin", "typescript"
     )
 
     private val uiKeywords = listOf(
@@ -24,6 +28,12 @@ object PromptRouter {
         "人事", "招聘", "绩效", "制度", "考勤", "汇报", "财务", "报销", "报表", "预算", "费用", "流程"
     )
 
+    /**
+     * Detects the best matching domain for a user question.
+     *
+     * @param text current user question used for routing only.
+     * @return matched domain, or [DomainType.GENERAL] when no keyword matches.
+     */
     fun detectDomain(text: String): DomainType {
         val content = text.lowercase()
 
@@ -37,6 +47,12 @@ object PromptRouter {
         }
     }
 
+    /**
+     * Resolves the prompt template for a detected domain.
+     *
+     * @param domainType detected question domain.
+     * @return prompt template text.
+     */
     fun resolvePrompt(domainType: DomainType): String {
         return when (domainType) {
             DomainType.PAYMENT -> PromptTemplates.PAYMENT

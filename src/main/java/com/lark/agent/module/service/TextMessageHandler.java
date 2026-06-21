@@ -10,9 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * 文本消息处理器，负责筛选文本消息、组装上下文并调用模型回复。
- *
- * @Author: fatina 2026/06/18
+ * Handles text messages by assembling model context, invoking Gemini, and replying to Lark.
  */
 @Service
 public class TextMessageHandler implements MessageHandler {
@@ -25,16 +23,18 @@ public class TextMessageHandler implements MessageHandler {
 
     @Resource
     private GeminiClient geminiClient;
+
     @Resource
     private MessageContextAssembler messageContextAssembler;
+
     @Resource
     private LarkMessageReplyService larkMessageReplyService;
 
     /**
-     * 判断当前消息是否由文本消息处理器处理。
+     * Checks whether this handler can process the normalized message.
      *
-     * @param message 当前消息
-     * @return true 表示支持处理
+     * @param message normalized Lark message.
+     * @return true when the message is a non-empty text message with chat and message IDs.
      */
     @Override
     public boolean support(NormalizedMessage message) {
@@ -46,18 +46,19 @@ public class TextMessageHandler implements MessageHandler {
     }
 
     /**
-     * 组装上下文并调用模型生成回复，再回写到当前消息线程。
+     * Processes a text message by streaming a model response into a Lark card.
      *
-     * @param message 当前消息
+     * @param message normalized Lark text message.
      */
     @Override
     public void handle(NormalizedMessage message) {
         try {
-            // 先把群聊引用链或私聊最近几条消息整理成上下文，再一并交给模型。
             String context = messageContextAssembler.assemble(message);
-            // 路由仍只基于当前提问判断领域，避免历史上下文把 prompt 分类带偏。
-            String reply = geminiClient.call(context, message.getContent());
-            larkMessageReplyService.replyText(message.getChatId(), message.getMessageId(), reply);
+            larkMessageReplyService.replyStreamingCard(
+                    message.getChatId(),
+                    message.getMessageId(),
+                    chunkConsumer -> geminiClient.stream(context, message.getContent(), chunkConsumer)
+            );
         } catch (ClientException e) {
             if (isQuotaExceeded(e)) {
                 log.warn("Gemini quota exceeded. chatId={}, messageId={}", message.getChatId(), message.getMessageId(), e);
@@ -73,10 +74,10 @@ public class TextMessageHandler implements MessageHandler {
     }
 
     /**
-     * 识别 Gemini 的额度超限和限流错误，便于给用户返回更明确的提示。
+     * Checks whether a Gemini client exception indicates quota exhaustion or rate limiting.
      *
-     * @param exception Gemini 客户端异常
-     * @return true 表示额度超限或触发限流
+     * @param exception Gemini SDK client exception.
+     * @return true when the exception looks like quota or rate limiting.
      */
     private boolean isQuotaExceeded(ClientException exception) {
         String errorMessage = exception.getMessage();

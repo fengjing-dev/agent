@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 封装 Lark 消息查询接口，统一提供单条消息和历史消息读取能力。
+ * Wraps Lark IM message query APIs used for context assembly.
  */
 @Service
 public class LarkMessageQueryService {
@@ -29,17 +29,19 @@ public class LarkMessageQueryService {
     private final Client client;
 
     /**
-     * @param agentProperties Lark 应用配置
+     * Creates a Lark OpenAPI client from application credentials.
+     *
+     * @param agentProperties Lark application configuration.
      */
     public LarkMessageQueryService(AgentProperties agentProperties) {
         this.client = Client.newBuilder(agentProperties.getAppId(), agentProperties.getAppSecret()).build();
     }
 
     /**
-     * 按消息 ID 拉单条消息，主要用于群聊引用链向上追溯。
+     * Queries one message by message ID.
      *
-     * @param messageId 消息 ID
-     * @return 查询到的消息，查询失败或不存在时返回空
+     * @param messageId Lark message ID.
+     * @return queried message, or empty when the API call fails or no message exists.
      */
     public Optional<Message> getMessageById(String messageId) {
         try {
@@ -59,11 +61,11 @@ public class LarkMessageQueryService {
     }
 
     /**
-     * 按聊天维度拉最近几条消息，主要用于私聊场景自动补上下文。
+     * Lists recent messages in a chat.
      *
-     * @param chatId 聊天 ID
-     * @param pageSize 拉取条数
-     * @return 消息列表，失败时返回空列表
+     * @param chatId Lark chat ID.
+     * @param pageSize number of recent messages to request.
+     * @return recent messages in API order, or an empty list when the API call fails.
      */
     public List<Message> listRecentMessages(String chatId, int pageSize) {
         try {

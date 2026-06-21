@@ -3,31 +3,26 @@ package com.lark.agent.module.properties
 import org.springframework.boot.context.properties.ConfigurationProperties
 
 /**
- * Gemini 大模型配置。
- *
- * 使用 `@ConfigurationProperties` 绑定配置时，属性需要可写，
- * 因此这里统一使用 `var`，由 Kotlin 自动生成 getter/setter。
+ * Configuration properties for Gemini model access.
  */
 @ConfigurationProperties(prefix = "gemini")
 class GeminiProperties {
 
-    /**
-     * Gemini API Key。
-     */
+    /** Gemini API key. */
     var apiKey: String? = null
 
-    /**
-     * Gemini 模型名称。
-     */
+    /** Gemini model name. */
     var model: String? = null
 
-    /**
-     * Gemini 接口基础地址。
-     */
+    /** Gemini API base URL. */
     var baseUrl: String? = null
 
-    /**
-     * 发送给模型的系统提示词。
-     */
+    /** Global system prompt prepended to every model request. */
     var systemPrompt: String? = null
+
+    /** Maximum retry attempts for transient model errors. */
+    var maxRetries: Int = 2
+
+    /** Initial retry delay in milliseconds. */
+    var initialRetryDelayMs: Long = 1000
 }

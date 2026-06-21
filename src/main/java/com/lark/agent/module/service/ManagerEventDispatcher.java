@@ -9,23 +9,28 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * 启动 Lark 长连接并消费消息事件的运行器。
- * @Author: Fatina 2026/06/17
+ * Dispatches normalized Lark messages to the first matching message handler.
  */
 @Component
-public class ManagerEventDispatcher{
+public class ManagerEventDispatcher {
 
     private static final Logger log = LoggerFactory.getLogger(ManagerEventDispatcher.class);
 
     private final List<MessageHandler> messageHandlers;
 
+    /**
+     * Creates a dispatcher with all registered message handlers.
+     *
+     * @param messageHandlers ordered Spring beans that can process messages.
+     */
     public ManagerEventDispatcher(List<MessageHandler> messageHandlers) {
         this.messageHandlers = messageHandlers;
     }
 
     /**
-     * 处理消息
-     * @param message 消息
+     * Finds a supported handler and delegates the message to it.
+     *
+     * @param message normalized Lark message received from the long connection.
      */
     public void handleMessage(NormalizedMessage message) {
         log.info("Received message: chatId={}, messageId={}, content={}",
