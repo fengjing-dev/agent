@@ -10,15 +10,14 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
+
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * JSON 工具类
- *
- * @author luminal
+ * Shared JSON serialization and deserialization utilities backed by Jackson.
  */
 @Slf4j
 public class JsonUtils {
@@ -33,31 +32,55 @@ public class JsonUtils {
     }
 
     /**
-     * 初始化 objectMapper 属性
-     * <p>
-     * 通过这样的方式，使用 Spring 创建的 ObjectMapper Bean
+     * Replaces the static mapper with an externally configured mapper.
      *
-     * @param objectMapper ObjectMapper 对象
+     * @param objectMapper mapper to use for subsequent utility calls.
      */
     public static void init(ObjectMapper objectMapper) {
         JsonUtils.objectMapper = objectMapper;
     }
 
+    /**
+     * Serializes an object to JSON.
+     *
+     * @param object object to serialize.
+     * @return JSON string.
+     */
     @SneakyThrows
     public static String toJsonString(Object object) {
         return objectMapper.writeValueAsString(object);
     }
 
+    /**
+     * Serializes an object to UTF-8 JSON bytes.
+     *
+     * @param object object to serialize.
+     * @return JSON byte array.
+     */
     @SneakyThrows
     public static byte[] toJsonByte(Object object) {
         return objectMapper.writeValueAsBytes(object);
     }
 
+    /**
+     * Serializes an object to pretty-printed JSON.
+     *
+     * @param object object to serialize.
+     * @return formatted JSON string.
+     */
     @SneakyThrows
     public static String toJsonPrettyString(Object object) {
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
     }
 
+    /**
+     * Parses JSON text into a target class.
+     *
+     * @param text JSON text.
+     * @param clazz target class.
+     * @param <T> target type.
+     * @return parsed object, or null when text is empty.
+     */
     public static <T> T parseObject(String text, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
             return null;
@@ -70,6 +93,15 @@ public class JsonUtils {
         }
     }
 
+    /**
+     * Parses a nested JSON path into a target class.
+     *
+     * @param text JSON text.
+     * @param path field name to read from the root node.
+     * @param clazz target class.
+     * @param <T> target type.
+     * @return parsed nested object, or null when text is empty.
+     */
     public static <T> T parseObject(String text, String path, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
             return null;
@@ -84,6 +116,14 @@ public class JsonUtils {
         }
     }
 
+    /**
+     * Parses JSON text into a generic Java type.
+     *
+     * @param text JSON text.
+     * @param type target Java type.
+     * @param <T> target type.
+     * @return parsed object, or null when text is empty.
+     */
     public static <T> T parseObject(String text, Type type) {
         if (!StringUtils.hasLength(text)) {
             return null;
@@ -97,13 +137,12 @@ public class JsonUtils {
     }
 
     /**
-     * 将字符串解析成指定类型的对象
-     * 使用 {@link #parseObject(String, Class)} 时，在@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) 的场景下，
-     * 如果 text 没有 class 属性，则会报错。此时，使用这个方法，可以解决。
+     * Parses JSON text into a target class.
      *
-     * @param text 字符串
-     * @param clazz 类型
-     * @return 对象
+     * @param text JSON text.
+     * @param clazz target class.
+     * @param <T> target type.
+     * @return parsed object, or null when text is empty.
      */
     public static <T> T parseObject2(String text, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
@@ -112,6 +151,14 @@ public class JsonUtils {
         return JsonUtils.parseObject(text, clazz);
     }
 
+    /**
+     * Parses JSON text using a Jackson type reference.
+     *
+     * @param text JSON text.
+     * @param typeReference target type reference.
+     * @param <T> target type.
+     * @return parsed object.
+     */
     public static <T> T parseObject(String text, TypeReference<T> typeReference) {
         try {
             return objectMapper.readValue(text, typeReference);
@@ -122,11 +169,12 @@ public class JsonUtils {
     }
 
     /**
-     * 解析 JSON 字符串成指定类型的对象，如果解析失败，则返回 null
+     * Parses JSON text using a type reference and returns null when parsing fails.
      *
-     * @param text 字符串
-     * @param typeReference 类型引用
-     * @return 指定类型的对象
+     * @param text JSON text.
+     * @param typeReference target type reference.
+     * @param <T> target type.
+     * @return parsed object, or null on parse failure.
      */
     public static <T> T parseObjectQuietly(String text, TypeReference<T> typeReference) {
         try {
@@ -136,6 +184,14 @@ public class JsonUtils {
         }
     }
 
+    /**
+     * Parses JSON array text into a typed list.
+     *
+     * @param text JSON array text.
+     * @param clazz element class.
+     * @param <T> element type.
+     * @return parsed list, or an empty list when text is empty.
+     */
     public static <T> List<T> parseArray(String text, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
             return new ArrayList<>();
@@ -148,6 +204,15 @@ public class JsonUtils {
         }
     }
 
+    /**
+     * Parses a nested JSON array into a typed list.
+     *
+     * @param text JSON text.
+     * @param path field name to read from the root node.
+     * @param clazz element class.
+     * @param <T> element type.
+     * @return parsed list, or null when text is empty.
+     */
     public static <T> List<T> parseArray(String text, String path, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
             return null;
@@ -162,6 +227,12 @@ public class JsonUtils {
         }
     }
 
+    /**
+     * Parses JSON text into a Jackson tree.
+     *
+     * @param text JSON text.
+     * @return root JSON node.
+     */
     public static JsonNode parseTree(String text) {
         try {
             return objectMapper.readTree(text);
@@ -171,6 +242,12 @@ public class JsonUtils {
         }
     }
 
+    /**
+     * Parses JSON bytes into a Jackson tree.
+     *
+     * @param text JSON bytes.
+     * @return root JSON node.
+     */
     public static JsonNode parseTree(byte[] text) {
         try {
             return objectMapper.readTree(text);

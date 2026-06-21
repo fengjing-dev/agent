@@ -18,9 +18,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ExecutionException;
 
 /**
- * 负责管理 Lark 长连接生命周期，并把消息事件交给分发器处理。
- *
- * @Author: Fatina 2026/06/17
+ * Manages the Lark long-connection lifecycle and registers channel event handlers.
  */
 @Component
 public class LarkChannelManager {
@@ -33,18 +31,21 @@ public class LarkChannelManager {
 
     @Resource
     private ManagerEventDispatcher dispatcher;
+
     @Resource
     private LarkMessageReplyService larkMessageReplyService;
 
     /**
-     * @param properties Lark 应用配置
+     * Creates a channel manager with Lark agent configuration.
+     *
+     * @param properties Lark agent configuration properties.
      */
     public LarkChannelManager(AgentProperties properties) {
         this.properties = properties;
     }
 
     /**
-     * 建立 Lark 长连接并注册事件处理器。
+     * Creates the Lark channel, registers handlers, and opens the websocket connection.
      */
     public void connection() {
         try {
@@ -60,7 +61,7 @@ public class LarkChannelManager {
     }
 
     /**
-     * 应用退出时关闭 Lark 长连接。
+     * Disconnects the Lark channel when the Spring application is shutting down.
      */
     @PreDestroy
     public void shutdown() {
@@ -79,7 +80,9 @@ public class LarkChannelManager {
     }
 
     /**
-     * @return Lark 长连接配置
+     * Builds Lark channel options from application configuration.
+     *
+     * @return channel options for websocket transport.
      */
     private LarkChannelOptions buildOptions() {
         PolicyConfig policyConfig = new PolicyConfig();
@@ -95,7 +98,7 @@ public class LarkChannelManager {
     }
 
     /**
-     * 注册消息、错误和重连事件。
+     * Registers message, error, and reconnect event handlers on the channel.
      */
     private void registerHandlers() {
         channel.on("message", message -> dispatcher.handleMessage((NormalizedMessage) message));
@@ -126,10 +129,10 @@ public class LarkChannelManager {
     }
 
     /**
-     * 错误事件中的原始对象可能没有可读的 toString，这里优先转成 JSON 便于排查。
+     * Safely serializes an event object for diagnostic logging.
      *
-     * @param event 原始事件对象
-     * @return 可读字符串
+     * @param event raw event object from the SDK.
+     * @return JSON string when serialization succeeds, otherwise {@link String#valueOf(Object)}.
      */
     private String safeToJson(Object event) {
         if (event == null) {
