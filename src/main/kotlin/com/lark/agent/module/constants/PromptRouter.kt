@@ -3,7 +3,7 @@ package com.lark.agent.module.constants
 import com.lark.agent.module.enum.DomainType
 
 /**
- * Selects a domain-specific prompt by matching keywords in the current user question.
+ * 根据当前用户问题中的关键词选择领域提示词。
  */
 object PromptRouter {
 
@@ -29,10 +29,10 @@ object PromptRouter {
     )
 
     /**
-     * Detects the best matching domain for a user question.
+     * 检测用户问题最匹配的领域。
      *
-     * @param text current user question used for routing only.
-     * @return matched domain, or [DomainType.GENERAL] when no keyword matches.
+     * @param text 当前用户问题，仅用于路由。
+     * @return 匹配到的领域；没有关键词命中时返回 [DomainType.GENERAL]。
      */
     fun detectDomain(text: String): DomainType {
         val content = text.lowercase()
@@ -48,10 +48,10 @@ object PromptRouter {
     }
 
     /**
-     * Resolves the prompt template for a detected domain.
+     * 根据检测到的领域解析提示词模板。
      *
-     * @param domainType detected question domain.
-     * @return prompt template text.
+     * @param domainType 检测到的问题领域。
+     * @return 提示词模板文本。
      */
     fun resolvePrompt(domainType: DomainType): String {
         return when (domainType) {

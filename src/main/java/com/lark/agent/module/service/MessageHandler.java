@@ -3,22 +3,22 @@ package com.lark.agent.module.service;
 import com.lark.oapi.channel.model.NormalizedMessage;
 
 /**
- * Strategy interface for handling normalized Lark messages.
+ * 处理标准化 Lark 消息的策略接口。
  */
 public interface MessageHandler {
 
     /**
-     * Checks whether this handler supports the provided message.
+     * 判断当前处理器是否支持给定消息。
      *
-     * @param message normalized Lark message.
-     * @return true when this handler should process the message.
+     * @param message 标准化后的 Lark 消息。
+     * @return 当前处理器应处理该消息时返回 true。
      */
     boolean support(NormalizedMessage message);
 
     /**
-     * Processes a supported message.
+     * 处理一条已确认支持的消息。
      *
-     * @param message normalized Lark message.
+     * @param message 标准化后的 Lark 消息。
      */
     void handle(NormalizedMessage message);
 }

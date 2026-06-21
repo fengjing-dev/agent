@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Shared JSON serialization and deserialization utilities backed by Jackson.
+ * 基于 Jackson 的通用 JSON 序列化和反序列化工具。
  */
 @Slf4j
 public class JsonUtils {
@@ -32,19 +32,19 @@ public class JsonUtils {
     }
 
     /**
-     * Replaces the static mapper with an externally configured mapper.
+     * 使用外部配置的 mapper 替换静态 mapper。
      *
-     * @param objectMapper mapper to use for subsequent utility calls.
+     * @param objectMapper 后续工具方法使用的 mapper。
      */
     public static void init(ObjectMapper objectMapper) {
         JsonUtils.objectMapper = objectMapper;
     }
 
     /**
-     * Serializes an object to JSON.
+     * 将对象序列化为 JSON 字符串。
      *
-     * @param object object to serialize.
-     * @return JSON string.
+     * @param object 待序列化对象。
+     * @return JSON 字符串。
      */
     @SneakyThrows
     public static String toJsonString(Object object) {
@@ -52,10 +52,10 @@ public class JsonUtils {
     }
 
     /**
-     * Serializes an object to UTF-8 JSON bytes.
+     * 将对象序列化为 UTF-8 JSON 字节数组。
      *
-     * @param object object to serialize.
-     * @return JSON byte array.
+     * @param object 待序列化对象。
+     * @return JSON 字节数组。
      */
     @SneakyThrows
     public static byte[] toJsonByte(Object object) {
@@ -63,10 +63,10 @@ public class JsonUtils {
     }
 
     /**
-     * Serializes an object to pretty-printed JSON.
+     * 将对象序列化为格式化后的 JSON 字符串。
      *
-     * @param object object to serialize.
-     * @return formatted JSON string.
+     * @param object 待序列化对象。
+     * @return 格式化后的 JSON 字符串。
      */
     @SneakyThrows
     public static String toJsonPrettyString(Object object) {
@@ -74,12 +74,12 @@ public class JsonUtils {
     }
 
     /**
-     * Parses JSON text into a target class.
+     * 将 JSON 文本解析为目标类。
      *
-     * @param text JSON text.
-     * @param clazz target class.
-     * @param <T> target type.
-     * @return parsed object, or null when text is empty.
+     * @param text JSON 文本。
+     * @param clazz 目标类。
+     * @param <T> 目标类型。
+     * @return 解析后的对象；文本为空时返回 null。
      */
     public static <T> T parseObject(String text, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
@@ -94,13 +94,13 @@ public class JsonUtils {
     }
 
     /**
-     * Parses a nested JSON path into a target class.
+     * 将 JSON 中指定路径的节点解析为目标类。
      *
-     * @param text JSON text.
-     * @param path field name to read from the root node.
-     * @param clazz target class.
-     * @param <T> target type.
-     * @return parsed nested object, or null when text is empty.
+     * @param text JSON 文本。
+     * @param path 从根节点读取的字段名。
+     * @param clazz 目标类。
+     * @param <T> 目标类型。
+     * @return 解析后的嵌套对象；文本为空时返回 null。
      */
     public static <T> T parseObject(String text, String path, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
@@ -117,12 +117,12 @@ public class JsonUtils {
     }
 
     /**
-     * Parses JSON text into a generic Java type.
+     * 将 JSON 文本解析为泛型 Java 类型。
      *
-     * @param text JSON text.
-     * @param type target Java type.
-     * @param <T> target type.
-     * @return parsed object, or null when text is empty.
+     * @param text JSON 文本。
+     * @param type 目标 Java 类型。
+     * @param <T> 目标类型。
+     * @return 解析后的对象；文本为空时返回 null。
      */
     public static <T> T parseObject(String text, Type type) {
         if (!StringUtils.hasLength(text)) {
@@ -137,12 +137,12 @@ public class JsonUtils {
     }
 
     /**
-     * Parses JSON text into a target class.
+     * 将 JSON 文本解析为目标类。
      *
-     * @param text JSON text.
-     * @param clazz target class.
-     * @param <T> target type.
-     * @return parsed object, or null when text is empty.
+     * @param text JSON 文本。
+     * @param clazz 目标类。
+     * @param <T> 目标类型。
+     * @return 解析后的对象；文本为空时返回 null。
      */
     public static <T> T parseObject2(String text, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
@@ -152,12 +152,12 @@ public class JsonUtils {
     }
 
     /**
-     * Parses JSON text using a Jackson type reference.
+     * 使用 Jackson 类型引用解析 JSON 文本。
      *
-     * @param text JSON text.
-     * @param typeReference target type reference.
-     * @param <T> target type.
-     * @return parsed object.
+     * @param text JSON 文本。
+     * @param typeReference 目标类型引用。
+     * @param <T> 目标类型。
+     * @return 解析后的对象。
      */
     public static <T> T parseObject(String text, TypeReference<T> typeReference) {
         try {
@@ -169,12 +169,12 @@ public class JsonUtils {
     }
 
     /**
-     * Parses JSON text using a type reference and returns null when parsing fails.
+     * 使用类型引用解析 JSON 文本，并在解析失败时返回 null。
      *
-     * @param text JSON text.
-     * @param typeReference target type reference.
-     * @param <T> target type.
-     * @return parsed object, or null on parse failure.
+     * @param text JSON 文本。
+     * @param typeReference 目标类型引用。
+     * @param <T> 目标类型。
+     * @return 解析后的对象；解析失败时返回 null。
      */
     public static <T> T parseObjectQuietly(String text, TypeReference<T> typeReference) {
         try {
@@ -185,12 +185,12 @@ public class JsonUtils {
     }
 
     /**
-     * Parses JSON array text into a typed list.
+     * 将 JSON 数组文本解析为指定类型列表。
      *
-     * @param text JSON array text.
-     * @param clazz element class.
-     * @param <T> element type.
-     * @return parsed list, or an empty list when text is empty.
+     * @param text JSON 数组文本。
+     * @param clazz 元素类。
+     * @param <T> 元素类型。
+     * @return 解析后的列表；文本为空时返回空列表。
      */
     public static <T> List<T> parseArray(String text, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
@@ -205,13 +205,13 @@ public class JsonUtils {
     }
 
     /**
-     * Parses a nested JSON array into a typed list.
+     * 将 JSON 中指定路径的数组节点解析为指定类型列表。
      *
-     * @param text JSON text.
-     * @param path field name to read from the root node.
-     * @param clazz element class.
-     * @param <T> element type.
-     * @return parsed list, or null when text is empty.
+     * @param text JSON 文本。
+     * @param path 从根节点读取的字段名。
+     * @param clazz 元素类。
+     * @param <T> 元素类型。
+     * @return 解析后的列表；文本为空时返回 null。
      */
     public static <T> List<T> parseArray(String text, String path, Class<T> clazz) {
         if (!StringUtils.hasLength(text)) {
@@ -228,10 +228,10 @@ public class JsonUtils {
     }
 
     /**
-     * Parses JSON text into a Jackson tree.
+     * 将 JSON 文本解析为 Jackson 树节点。
      *
-     * @param text JSON text.
-     * @return root JSON node.
+     * @param text JSON 文本。
+     * @return 根 JSON 节点。
      */
     public static JsonNode parseTree(String text) {
         try {
@@ -243,10 +243,10 @@ public class JsonUtils {
     }
 
     /**
-     * Parses JSON bytes into a Jackson tree.
+     * 将 JSON 字节数组解析为 Jackson 树节点。
      *
-     * @param text JSON bytes.
-     * @return root JSON node.
+     * @param text JSON 字节数组。
+     * @return 根 JSON 节点。
      */
     public static JsonNode parseTree(byte[] text) {
         try {

@@ -9,6 +9,9 @@ logging:
     root: INFO
     com.lark.agent: INFO
 
+model:
+  provider: ${MODEL_PROVIDER:gemini}
+
 lark:
   agent:
     app-id: ${LARK_AGENT_APP_ID:}
@@ -17,8 +20,7 @@ lark:
     require-mention: ${LARK_AGENT_REQUIRE_MENTION:true}
     respond-to-mention-all: ${LARK_AGENT_RESPOND_TO_MENTION_ALL:false}
     group-reply-chain-depth: ${LARK_AGENT_GROUP_REPLY_CHAIN_DEPTH:5}
-    private-chat-context-size: ${LARK_AGENT_PRIVATE_CHAT_CONTEXT_SIZE:5}
-    include-bot-history: ${LARK_AGENT_INCLUDE_BOT_HISTORY:false}
+    private-chat-context-size: ${LARK_AGENT_PRIVATE_CHAT_CONTEXT_SIZE:10}
     group-allow-list:
 
 server:
@@ -30,8 +32,35 @@ gemini:
   base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
   max-retries: ${GEMINI_MAX_RETRIES:2}
   initial-retry-delay-ms: ${GEMINI_INITIAL_RETRY_DELAY_MS:1000}
+  min-request-interval-ms: ${GEMINI_MIN_REQUEST_INTERVAL_MS:2000}
+  rate-limit-cooldown-ms: ${GEMINI_RATE_LIMIT_COOLDOWN_MS:60000}
   system-prompt: |
     你是 Lark 群聊中的通用智能助手。
     请始终使用简体中文回答。
     回答保持简洁、直接、清晰。
     如果信息不足，请明确说明，不要编造。
+    回答默认使用以下结构：
+    【分析摘要】
+    必须先输出这一段，用 2-5 条简短要点说明判断依据、关键约束或推理方向；这是给用户看的分析过程摘要，不要输出隐藏推理或冗长推演。
+    【最终回答】
+    再输出这一段，给出结论、方案或可执行步骤。
+
+deepseek:
+  api-key: ${DEEPSEEK_API_KEY:}
+  model: ${DEEPSEEK_MODEL:deepseek-v4-flash}
+  base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+  max-retries: ${DEEPSEEK_MAX_RETRIES:2}
+  initial-retry-delay-ms: ${DEEPSEEK_INITIAL_RETRY_DELAY_MS:1000}
+  min-request-interval-ms: ${DEEPSEEK_MIN_REQUEST_INTERVAL_MS:1000}
+  rate-limit-cooldown-ms: ${DEEPSEEK_RATE_LIMIT_COOLDOWN_MS:60000}
+  timeout-seconds: ${DEEPSEEK_TIMEOUT_SECONDS:120}
+  system-prompt: |
+    你是 Lark 群聊中的通用智能助手。
+    请始终使用简体中文回答。
+    回答保持简洁、直接、清晰。
+    如果信息不足，请明确说明，不要编造。
+    回答默认使用以下结构：
+    【分析摘要】
+    必须先输出这一段，用 2-5 条简短要点说明判断依据、关键约束或推理方向；这是给用户看的分析过程摘要，不要输出隐藏推理或冗长推演。
+    【最终回答】
+    再输出这一段，给出结论、方案或可执行步骤。

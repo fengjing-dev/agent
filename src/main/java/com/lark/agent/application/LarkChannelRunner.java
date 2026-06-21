@@ -6,7 +6,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 /**
- * Starts the Lark long connection after the Spring application context is ready.
+ * Spring 应用上下文就绪后启动 Lark 长连接。
  */
 @Component
 public class LarkChannelRunner implements ApplicationRunner {
@@ -14,18 +14,18 @@ public class LarkChannelRunner implements ApplicationRunner {
     private final LarkChannelManager larkChannelManager;
 
     /**
-     * Creates a runner with the Lark channel manager.
+     * 使用 Lark 通道管理器创建启动器。
      *
-     * @param larkChannelManager manager responsible for the Lark long connection.
+     * @param larkChannelManager 负责 Lark 长连接的管理器。
      */
     public LarkChannelRunner(LarkChannelManager larkChannelManager) {
         this.larkChannelManager = larkChannelManager;
     }
 
     /**
-     * Opens the Lark channel after application startup.
+     * 应用启动完成后打开 Lark 通道。
      *
-     * @param args startup arguments provided by Spring Boot.
+     * @param args Spring Boot 提供的启动参数。
      */
     @Override
     public void run(ApplicationArguments args) {

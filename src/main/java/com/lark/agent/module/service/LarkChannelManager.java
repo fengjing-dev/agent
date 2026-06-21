@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Manages the Lark long-connection lifecycle and registers channel event handlers.
+ * 管理 Lark 长连接生命周期，并注册通道事件处理器。
  */
 @Component
 public class LarkChannelManager {
@@ -36,16 +36,16 @@ public class LarkChannelManager {
     private LarkMessageReplyService larkMessageReplyService;
 
     /**
-     * Creates a channel manager with Lark agent configuration.
+     * 使用 Lark 机器人配置创建通道管理器。
      *
-     * @param properties Lark agent configuration properties.
+     * @param properties Lark 机器人配置。
      */
     public LarkChannelManager(AgentProperties properties) {
         this.properties = properties;
     }
 
     /**
-     * Creates the Lark channel, registers handlers, and opens the websocket connection.
+     * 创建 Lark 通道，注册处理器，并打开 websocket 连接。
      */
     public void connection() {
         try {
@@ -61,7 +61,7 @@ public class LarkChannelManager {
     }
 
     /**
-     * Disconnects the Lark channel when the Spring application is shutting down.
+     * Spring 应用关闭时断开 Lark 通道。
      */
     @PreDestroy
     public void shutdown() {
@@ -80,9 +80,9 @@ public class LarkChannelManager {
     }
 
     /**
-     * Builds Lark channel options from application configuration.
+     * 根据应用配置构建 Lark 通道选项。
      *
-     * @return channel options for websocket transport.
+     * @return websocket 传输使用的通道选项。
      */
     private LarkChannelOptions buildOptions() {
         PolicyConfig policyConfig = new PolicyConfig();
@@ -98,7 +98,7 @@ public class LarkChannelManager {
     }
 
     /**
-     * Registers message, error, and reconnect event handlers on the channel.
+     * 在通道上注册消息、错误和重连事件处理器。
      */
     private void registerHandlers() {
         channel.on("message", message -> dispatcher.handleMessage((NormalizedMessage) message));
@@ -129,10 +129,10 @@ public class LarkChannelManager {
     }
 
     /**
-     * Safely serializes an event object for diagnostic logging.
+     * 安全序列化事件对象，用于诊断日志。
      *
-     * @param event raw event object from the SDK.
-     * @return JSON string when serialization succeeds, otherwise {@link String#valueOf(Object)}.
+     * @param event SDK 返回的原始事件对象。
+     * @return 序列化成功时返回 JSON 字符串，否则返回 {@link String#valueOf(Object)}。
      */
     private String safeToJson(Object event) {
         if (event == null) {

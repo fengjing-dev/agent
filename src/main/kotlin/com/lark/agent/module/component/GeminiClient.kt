@@ -2,57 +2,64 @@ package com.lark.agent.module.component
 
 import com.google.genai.Client
 import com.google.genai.errors.ClientException
+import com.google.genai.types.HttpOptions
 import com.lark.agent.module.constants.PromptRouter
 import com.lark.agent.module.properties.GeminiProperties
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
+import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
 /**
- * Gemini client responsible for prompt routing and model invocation.
+ * 负责提示词路由和模型调用的 Gemini 客户端。
  */
 @Component
-class GeminiClient(private val geminiProperties: GeminiProperties) {
+@ConditionalOnProperty(name = ["model.provider"], havingValue = "gemini", matchIfMissing = true)
+class GeminiClient(private val geminiProperties: GeminiProperties) : ModelClient {
 
     private val log: Logger = LoggerFactory.getLogger(GeminiClient::class.java)
     private val client: Client by lazy {
-        Client.builder().apiKey(geminiProperties.apiKey).build()
+        buildClient()
     }
+    private val requestLock = Any()
+    private val nextAllowedRequestAt = AtomicLong(0)
+    private val rateLimitedUntil = AtomicLong(0)
 
     /**
-     * Calls Gemini once and returns the complete response text.
+     * 调用 Gemini 一次并返回完整响应文本。
      *
-     * @param message full model context.
-     * @param routeText current user question used only for prompt routing.
-     * @return generated response text, or null when the SDK returns no text.
+     * @param message 完整模型上下文。
+     * @param routeText 当前用户问题，仅用于提示词路由。
+     * @return 生成的响应文本；SDK 没有返回文本时为 null。
      */
-    fun call(message: String, routeText: String = message): String? {
+    override fun call(message: String, routeText: String): String? {
         val prompt = buildPrompt(message, routeText)
         log.debug("Gemini prompt length={}", prompt.length)
         return generateContentWithRetry(prompt)
     }
 
     /**
-     * Calls Gemini with streaming output and forwards each text chunk to the caller.
+     * 以流式方式调用 Gemini，并把文本分片转发给调用方。
      *
-     * @param message full model context.
-     * @param routeText current user question used only for prompt routing.
-     * @param chunkConsumer callback that receives generated text chunks.
-     * @return complete generated response text assembled from all chunks.
+     * @param message 完整模型上下文。
+     * @param routeText 当前用户问题，仅用于提示词路由。
+     * @param chunkConsumer 接收生成文本分片的回调。
+     * @return 由所有分片拼成的完整生成文本。
      */
-    fun stream(message: String, routeText: String = message, chunkConsumer: Consumer<String>): String? {
+    override fun stream(message: String, routeText: String, chunkConsumer: Consumer<String>): String? {
         val prompt = buildPrompt(message, routeText)
-        log.debug("Gemini streaming prompt length={}", prompt.length)
+        log.info("Gemini streaming prompt length={}, prompt:{}", prompt.length, prompt)
         return generateContentStreamWithRetry(prompt, chunkConsumer)
     }
 
     /**
-     * Builds the final prompt from the global system prompt, domain prompt, and user context.
+     * 根据全局系统提示词、领域提示词和用户上下文构建最终 prompt。
      *
-     * @param message full model context.
-     * @param routeText current user question used only for prompt routing.
-     * @return final prompt sent to Gemini.
+     * @param message 完整模型上下文。
+     * @param routeText 当前用户问题，仅用于提示词路由。
+     * @return 发送给 Gemini 的最终 prompt。
      */
     private fun buildPrompt(message: String, routeText: String): String {
         val domainType = PromptRouter.detectDomain(routeText)
@@ -62,10 +69,26 @@ class GeminiClient(private val geminiProperties: GeminiProperties) {
     }
 
     /**
-     * Generates non-streaming content with retry support for transient rate-limit responses.
+     * 根据凭据和 HTTP 配置构建 Gemini SDK 客户端。
      *
-     * @param prompt final prompt sent to Gemini.
-     * @return generated response text.
+     * @return Gemini SDK 客户端。
+     */
+    private fun buildClient(): Client {
+        require(!geminiProperties.apiKey.isNullOrBlank()) { "gemini.api-key must not be blank when model.provider=gemini" }
+        require(!geminiProperties.model.isNullOrBlank()) { "gemini.model must not be blank when model.provider=gemini" }
+        val builder = Client.builder().apiKey(geminiProperties.apiKey)
+        val baseUrl = geminiProperties.baseUrl?.takeIf { it.isNotBlank() }
+        if (baseUrl != null) {
+            builder.httpOptions(HttpOptions.builder().baseUrl(baseUrl).build())
+        }
+        return builder.build()
+    }
+
+    /**
+     * 生成非流式内容，并对瞬时限流响应做重试。
+     *
+     * @param prompt 发送给 Gemini 的最终 prompt。
+     * @return 生成的响应文本。
      */
     private fun generateContentWithRetry(prompt: String): String? {
         var attempt = 0
@@ -74,10 +97,14 @@ class GeminiClient(private val geminiProperties: GeminiProperties) {
 
         while (true) {
             try {
+                waitForRequestSlot()
                 val response = client.models.generateContent(geminiProperties.model, prompt, null)
                 return response?.text()
             } catch (exception: ClientException) {
                 if (!isRateLimited(exception) || attempt >= maxRetries) {
+                    if (isRateLimited(exception)) {
+                        startRateLimitCooldown()
+                    }
                     throw exception
                 }
                 attempt++
@@ -95,11 +122,11 @@ class GeminiClient(private val geminiProperties: GeminiProperties) {
     }
 
     /**
-     * Generates streaming content with retry support before any chunk has been emitted.
+     * 生成流式内容；在尚未输出任何分片前支持限流重试。
      *
-     * @param prompt final prompt sent to Gemini.
-     * @param chunkConsumer callback that receives generated text chunks.
-     * @return generated response text assembled from all chunks.
+     * @param prompt 发送给 Gemini 的最终 prompt。
+     * @param chunkConsumer 接收生成文本分片的回调。
+     * @return 由所有分片拼成的完整生成文本。
      */
     private fun generateContentStreamWithRetry(prompt: String, chunkConsumer: Consumer<String>): String? {
         var attempt = 0
@@ -110,6 +137,7 @@ class GeminiClient(private val geminiProperties: GeminiProperties) {
             var emitted = false
             val fullText = StringBuilder()
             try {
+                waitForRequestSlot()
                 client.models.generateContentStream(geminiProperties.model, prompt, null).use { stream ->
                     for (response in stream) {
                         val chunk = response?.text()
@@ -123,6 +151,9 @@ class GeminiClient(private val geminiProperties: GeminiProperties) {
                 return fullText.toString()
             } catch (exception: ClientException) {
                 if (emitted || !isRateLimited(exception) || attempt >= maxRetries) {
+                    if (isRateLimited(exception)) {
+                        startRateLimitCooldown()
+                    }
                     throw exception
                 }
                 attempt++
@@ -140,10 +171,44 @@ class GeminiClient(private val geminiProperties: GeminiProperties) {
     }
 
     /**
-     * Checks whether a Gemini client exception indicates quota or rate limiting.
+     * 等待本地限流窗口，避免短时间连续请求打爆 Gemini 配额。
+     */
+    private fun waitForRequestSlot() {
+        synchronized(requestLock) {
+            val now = System.currentTimeMillis()
+            val cooldownUntil = rateLimitedUntil.get()
+            if (now < cooldownUntil) {
+                throw ModelRateLimitException("Gemini local cooldown active after rate limit. retryAfterMs=${cooldownUntil - now}")
+            }
+
+            val requestAt = nextAllowedRequestAt.get()
+            if (now < requestAt) {
+                sleepBeforeRetry(requestAt - now)
+            }
+
+            val intervalMs = geminiProperties.minRequestIntervalMs.coerceAtLeast(0)
+            nextAllowedRequestAt.set(System.currentTimeMillis() + intervalMs)
+        }
+    }
+
+    /**
+     * 记录 Gemini 限流后的本地冷却窗口。
+     */
+    private fun startRateLimitCooldown() {
+        val cooldownMs = geminiProperties.rateLimitCooldownMs.coerceAtLeast(0)
+        if (cooldownMs <= 0) {
+            return
+        }
+        val until = System.currentTimeMillis() + cooldownMs
+        rateLimitedUntil.updateAndGet { current -> maxOf(current, until) }
+        log.warn("Gemini local cooldown started. cooldownMs={}", cooldownMs)
+    }
+
+    /**
+     * 判断 Gemini 客户端异常是否表示配额或限流问题。
      *
-     * @param exception Gemini SDK client exception.
-     * @return true when the exception looks like a rate-limit response.
+     * @param exception Gemini SDK 客户端异常。
+     * @return 异常看起来像限流响应时返回 true。
      */
     private fun isRateLimited(exception: ClientException): Boolean {
         val message = exception.message ?: return false
@@ -153,9 +218,9 @@ class GeminiClient(private val geminiProperties: GeminiProperties) {
     }
 
     /**
-     * Sleeps before retrying a model request.
+     * 在重试模型请求前等待。
      *
-     * @param delayMs delay duration in milliseconds.
+     * @param delayMs 等待时长，单位毫秒。
      */
     private fun sleepBeforeRetry(delayMs: Long) {
         if (delayMs <= 0) {
@@ -170,10 +235,10 @@ class GeminiClient(private val geminiProperties: GeminiProperties) {
     }
 
     /**
-     * Calculates the next exponential retry delay.
+     * 计算下一次指数退避延迟。
      *
-     * @param delayMs current delay in milliseconds.
-     * @return next delay, capped at ten seconds.
+     * @param delayMs 当前延迟，单位毫秒。
+     * @return 下一次延迟，最大十秒。
      */
     private fun nextDelay(delayMs: Long): Long {
         if (delayMs <= 0) {

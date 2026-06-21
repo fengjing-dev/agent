@@ -1,25 +1,25 @@
 package com.lark.agent.module.enum
 
 /**
- * Prompt routing domain used to select a specialized prompt template.
+ * 用于选择专用提示词模板的提示词路由领域。
  */
 enum class DomainType {
 
-    /** Payment, wallet, settlement, reconciliation, and transaction questions. */
+    /** 支付、钱包、清结算、对账和交易问题。 */
     PAYMENT,
 
-    /** Architecture, design pattern, refactoring, and scalability questions. */
+    /** 架构、设计模式、重构和扩展性问题。 */
     ARCH,
 
-    /** Code, exception, log, database, and engineering troubleshooting questions. */
+    /** 代码、异常、日志、数据库和工程排障问题。 */
     TECH,
 
-    /** User interface, interaction, layout, and visual design questions. */
+    /** 用户界面、交互、布局和视觉设计问题。 */
     UI,
 
-    /** Internal HR, finance, reimbursement, reporting, and process questions. */
+    /** 企业内部人事、财务、报销、汇报和流程问题。 */
     HR_FINANCE,
 
-    /** General assistant fallback domain. */
+    /** 通用助手兜底领域。 */
     GENERAL;
 }

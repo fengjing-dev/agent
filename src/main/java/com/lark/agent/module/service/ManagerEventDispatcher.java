@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Dispatches normalized Lark messages to the first matching message handler.
+ * 将标准化后的 Lark 消息分发给第一个匹配的消息处理器。
  */
 @Component
 public class ManagerEventDispatcher {
@@ -19,22 +19,33 @@ public class ManagerEventDispatcher {
     private final List<MessageHandler> messageHandlers;
 
     /**
-     * Creates a dispatcher with all registered message handlers.
+     * 使用所有已注册的消息处理器创建分发器。
      *
-     * @param messageHandlers ordered Spring beans that can process messages.
+     * @param messageHandlers 可处理消息的有序 Spring Bean 列表。
      */
     public ManagerEventDispatcher(List<MessageHandler> messageHandlers) {
         this.messageHandlers = messageHandlers;
     }
 
     /**
-     * Finds a supported handler and delegates the message to it.
+     * 查找支持当前消息的处理器并转交处理。
      *
-     * @param message normalized Lark message received from the long connection.
+     * @param message 从长连接收到的标准化 Lark 消息。
      */
     public void handleMessage(NormalizedMessage message) {
-        log.info("Received message: chatId={}, messageId={}, content={}",
-                message.getChatId(), message.getMessageId(), JsonUtils.toJsonString(message));
+        if (message == null) {
+            log.warn("Received null message from Lark channel.");
+            return;
+        }
+        log.info("Received message: chatId={}, messageId={}, chatType={}, rawContentType={}, senderId={}, mentionedBot={}, mentionAll={}",
+                message.getChatId(),
+                message.getMessageId(),
+                message.getChatType(),
+                message.getRawContentType(),
+                message.getSenderId(),
+                message.isMentionedBot(),
+                message.isMentionAll());
+        log.debug("Received message detail: {}", JsonUtils.toJsonString(message));
         for (MessageHandler messageHandler : messageHandlers) {
             if (messageHandler.support(message)) {
                 messageHandler.handle(message);
